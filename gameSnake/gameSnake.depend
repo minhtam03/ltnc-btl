@@ -1,0 +1,19 @@
+# depslib dependency file v1.0
+1647245673 source:d:\code_git\ltnc-btl\gamesnake\main.cpp
+	<bits/stdc++.h>
+	<SDL.h>
+	<Windows.h>
+	<SDL_image.h>
+	<SDL_mixer.h>
+	<SDL_ttf.h>
+	"SDL_utils.h"
+
+1647245563 source:d:\code_git\ltnc-btl\gamesnake\sdl_utils.cpp
+	<iostream>
+	"SDL_utils.h"
+
+1647245563 d:\code_git\ltnc-btl\gamesnake\sdl_utils.h
+	<iostream>
+	<SDL.h>
+	<SDL_image.h>
+
