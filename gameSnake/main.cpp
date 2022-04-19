@@ -15,7 +15,7 @@ const int SCREEN_HEIGHT = 600;
 const string WINDOW_TITLE = "Game Snake";
 int STEP_DELAY = 200;
 
-void Background(SDL_Renderer* renderer) {
+void Background(SDL_Renderer* renderer) {   // chua dung den
 //    SDL_Texture* background = loadTexture("bgr.jpg", renderer);
 //    SDL_RenderCopy(renderer, background, NULL, NULL);
 //    SDL_RenderPresent(renderer);
@@ -130,9 +130,9 @@ void Play(int &score) {
     food.y = rand() % (SCREEN_HEIGHT / 20) * 20;
     bool run = true;
     while (run && !gameOver(snake.getSnakeTempX(), snake.getSnakeTempY())) {
-        SDL_Texture* background = loadTexture("bgr.jpg", renderer);
-        SDL_RenderCopy(renderer, background, NULL, NULL);
-        SDL_RenderPresent(renderer);
+        //SDL_Texture* background = loadTexture("bgr.jpg", renderer);
+        //SDL_RenderCopy(renderer, background, NULL, NULL);
+        //SDL_RenderPresent(renderer);
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) run = false;
             else if (e.type == SDL_KEYDOWN) {
@@ -142,7 +142,7 @@ void Play(int &score) {
                     break;
                 case SDLK_w: case SDLK_UP:
                     snake.setDirection(0,-1);
-                    //Background(renderer);
+                    Background(renderer);
                     SDL_Delay(STEP_DELAY);
                     snake.Move();
                     snake.ShowSnake(renderer);
@@ -157,7 +157,7 @@ void Play(int &score) {
                     break;
                 case SDLK_s: case SDLK_DOWN:
                     snake.setDirection(0,1);
-                    //Background(renderer);
+                    Background(renderer);
                     SDL_Delay(STEP_DELAY);
                     snake.Move();
                     snake.ShowSnake(renderer);
@@ -172,7 +172,7 @@ void Play(int &score) {
                     break;
                 case SDLK_a: case SDLK_LEFT:
                     snake.setDirection(-1,0);
-                    //Background(renderer);
+                    Background(renderer);
                     SDL_Delay(STEP_DELAY);
                     snake.Move();
                     snake.ShowSnake(renderer);
@@ -187,7 +187,7 @@ void Play(int &score) {
                     break;
                 case SDLK_d: case SDLK_RIGHT:
                     snake.setDirection(1,0);
-                    //Background(renderer);
+                    Background(renderer);
                     SDL_Delay(STEP_DELAY);
                     snake.Move();
                     snake.ShowSnake(renderer);
@@ -203,7 +203,7 @@ void Play(int &score) {
                 }
             }
         }
-       // Background(renderer);
+        Background(renderer);
         SDL_Delay(STEP_DELAY);
         snake.Move();
         snake.ShowSnake(renderer);

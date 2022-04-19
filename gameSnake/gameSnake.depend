@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1647245673 source:d:\code_git\ltnc-btl\gamesnake\main.cpp
+1650332290 source:d:\code_git\ltnc-btl\gamesnake\main.cpp
 	<bits/stdc++.h>
 	<SDL.h>
 	<Windows.h>
