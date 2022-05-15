@@ -1,241 +1,481 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <ctime>
 #include <SDL.h>
-#include <Windows.h>
-#include <SDL_image.h>
-#include <SDL_mixer.h>
 #include <SDL_ttf.h>
+#include <SDL_image.h>
 #include "SDL_utils.h"
-#define MAX_SIZE_OF_SNAKE 100
-// #define SDL_ERROR 1
-// #define IMG_ERROR 2
 using namespace std;
 
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
-const string WINDOW_TITLE = "Game Snake";
-int STEP_DELAY = 200;
+const string WINDOW_TITLE = "Snake";
+int speed[4] = {75, 100, 130, 160};
 
-void Background(SDL_Renderer* renderer) {   // chua dung den
-//    SDL_Texture* background = loadTexture("bgr.jpg", renderer);
-//    SDL_RenderCopy(renderer, background, NULL, NULL);
-//    SDL_RenderPresent(renderer);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);    // mau nen
-    SDL_RenderClear(renderer);
+void renderPlayer(SDL_Renderer* renderer, SDL_Rect player, int x, int y, int scale, vector<int> tailX, vector<int> tailY, int tailLength) {
+	SDL_SetRenderDrawColor(renderer, 0, 153, 76, 255);
+	player.w = scale;
+	player.h = scale;
+	// Gets x and y of all tail blocks and renders them
+	for (int i = 0; i < tailLength; i++) {
+		player.x = tailX[i];
+		player.y = tailY[i];
+		SDL_RenderFillRect(renderer, &player);
+	}
+	player.x = x;
+	player.y = y;
+	SDL_RenderFillRect(renderer, &player);
 }
-void presentFood(SDL_Renderer* renderer, SDL_Rect rec) {
-    SDL_SetRenderDrawColor(renderer, 255, 165, 0, 0);       // mau thuc an
-    SDL_RenderFillRect(renderer, &rec);
-    SDL_RenderPresent(renderer);
+
+void renderFood(SDL_Renderer* renderer, SDL_Rect food) {
+    SDL_SetRenderDrawColor(renderer, 204, 0, 0, 255);
+    SDL_RenderFillRect(renderer, &food);
 }
-class Snake {
-private:
-    SDL_Rect snaketemp;
-    vector <SDL_Rect> cell;
-    int debug = 1;
-    int LorR, UorD;
 
-public:
-    Snake() {
-        snaketemp.h = 20;
-        snaketemp.w = 20;
-        snaketemp.x = 0;
-        snaketemp.y = 0;
-        cell.push_back(snaketemp);
-        UorD = 0;
-        LorR = 1;
-    }
-    int getSnakeTempX() {
-        return snaketemp.x;
-    }
-    int getSnakeTempY() {
-        return snaketemp.y;
-    }
-    bool isEat(SDL_Rect food) {
-        return (food.x == snaketemp.x && food.y == snaketemp.y);
-    }
-    void setDirection(int a, int b) {
-        if ((LorR * a) != -1) LorR = a;
-        if ((UorD * b) != -1) UorD = b;
-    }
-
-    void EraseTail() {
-        cell.erase(cell.begin());
-    }
-    int getLorR() {
-        return LorR;
-    }
-    int getUorD() {
-        return UorD;
-    }
-    void GrowUp() {
-        cell.push_back(snaketemp);
-    }
-    void Move() {
-        switch (LorR) {
-        case 0:
-            snaketemp.y += 20 * UorD;
-            break;
-        case -1 : case 1:
-            snaketemp.x += 20 * LorR;
-            break;
-        }
-// dam vao bo tuong khong chet
-//        if (snaketemp.x == -20)
-//            snaketemp.x = SCREEN_WIDTH - 20;
-//        else if (snaketemp.x == SCREEN_WIDTH)
-//            snaketemp.x = 0;
-//        if (snaketemp.y == -20)
-//            snaketemp.y = SCREEN_HEIGHT - 20;
-//        else if (snaketemp.y == SCREEN_HEIGHT)
-//            snaketemp.y = 0;
-
-        cell.push_back(snaketemp);
-        EraseTail();
-        cout << cell.size() << endl;
-    }
-    void ShowSnake(SDL_Renderer* renderer) {
-        for (size_t i = 0; i < cell.size(); i++) {
-            SDL_SetRenderDrawColor(renderer, 128, 0, 128, 100);     // mau ran
-            SDL_RenderFillRect(renderer, &cell[i]);
-        }
-        SDL_RenderPresent(renderer);
-    }
-};
-
-bool gameOver(int x, int y) {
-     return (x < 0 || y < 0 || x > SCREEN_WIDTH || y > SCREEN_HEIGHT);
+void renderFood_1(SDL_Renderer* renderer, SDL_Rect food) {
+    SDL_SetRenderDrawColor(renderer, 204, 0, 0, 255);
+    SDL_RenderFillRect(renderer, &food);
 }
-void setLevel() {
-    cout << "Choose level: " << endl;
-    int n;
-    cin >> n;
-    if (n == 1) STEP_DELAY = 500;
-    else if (n == 2) STEP_DELAY = 400;
-    else if (n == 3) STEP_DELAY = 300;
-    else if (n == 4) STEP_DELAY = 200;
-    else if (n == 5) STEP_DELAY = 100;
-}
-void Play(int &score) {
-    srand((unsigned int)time(NULL));
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    initSDL(window, renderer, SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE);
+void renderFood_2(SDL_Renderer* renderer, SDL_Rect food) {
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+    SDL_RenderFillRect(renderer, &food);
 
-    SDL_Event e;
-    Snake snake;
-    SDL_Rect food;
-    food.w = 20;
-    food.h = 20;
-    food.x = rand() % (SCREEN_WIDTH / 20) * 20;
-    food.y = rand() % (SCREEN_HEIGHT / 20) * 20;
-    bool run = true;
-    while (run && !gameOver(snake.getSnakeTempX(), snake.getSnakeTempY())) {
-        //SDL_Texture* background = loadTexture("bgr.jpg", renderer);
+}
+void renderFood_3(SDL_Renderer* renderer, SDL_Rect food) {
+    SDL_SetRenderDrawColor(renderer, 255, 153, 51, 255); // cam
+    SDL_RenderFillRect(renderer, &food);
+}
+void renderFood_4(SDL_Renderer* renderer, SDL_Rect food) {
+    SDL_SetRenderDrawColor(renderer, 102, 178, 255, 255);  // xanh
+    SDL_RenderFillRect(renderer, &food);
+}
+
+void renderScore(SDL_Renderer* renderer, int tailLength, int scale, int wScale) {
+    SDL_Color White = {255, 255, 255};
+    SDL_Color Black = {0, 0, 0};
+	// Get the font used for displaying text
+	TTF_Font* font = TTF_OpenFont((char*)"BoobToob.ttf", 20);
+	if (font == NULL) {
+		cout << "Font loading error" << endl;
+		return;
+	}
+	SDL_Surface* score = TTF_RenderText_Solid(font, (string("Score: ") + to_string(tailLength * 10)).c_str(), Black);
+	SDL_Texture* scoreMessage = SDL_CreateTextureFromSurface(renderer, score);
+	SDL_Rect scoreRect;
+	scoreRect.w = 150;
+	scoreRect.h = 48;
+	scoreRect.x = ((scale*wScale) / 2) - (scoreRect.w / 2);
+	scoreRect.y = 0;
+	SDL_RenderCopy(renderer, scoreMessage, NULL, &scoreRect);
+	TTF_CloseFont(font);
+}
+
+bool checkCollision(int foodx, int foody, int playerx, int playery) {
+	if (playerx == foodx && playery == foody){
+		return true;
+	}
+	return false;
+}
+
+// Get a valid spawn for the food which is not on top of a tail or player block
+pair<int, int> getFoodSpawn(vector<int> tailX, vector<int> tailY, int playerX, int playerY, int scale, int wScale, int tailLength) {
+	bool valid = false;
+	int x = 0;
+	int y = 0;
+	srand(time(0));
+	x = scale * ((rand() % 22)+1);
+	y = scale * ((rand() % 21)+2);
+	valid = true;
+
+	// Check all tail blocks and player block
+	for (int i = 0; i < tailLength; i++) {
+		if ((x == tailX[i] && y == tailY[i]) || (x == playerX && y == playerY)) {
+			valid = false;
+		}
+	}
+	pair<int, int> foodLoc;
+	if (!valid) {
+		foodLoc = make_pair(-100, -100);
+		return foodLoc;
+	}
+	foodLoc = make_pair(x, y);
+	return foodLoc;
+}
+
+bool gameOver(int x, int y, int scale, int wScale, int tailLength, vector<int> tailX, vector<int> tailY) {
+    if (x < 24 || y < 48 || x > scale * wScale - 2*scale || y > scale * wScale - 2*scale) return true;
+    for (int i = 0; i < tailLength; i++) {
+			if (x == tailX[i] && y == tailY[i]) {
+                return true;
+			}
+    }
+    return false;
+}
+
+void renderGameOver(SDL_Renderer* renderer, SDL_Event event, int scale, int wScale, int tailLength) {
+	SDL_Color Red = { 255, 0, 0 };
+	SDL_Color White = { 255, 255, 255 };
+	SDL_Color Black = { 0, 0, 0 };
+
+	// Get the font used for displaying text
+	TTF_Font* font = TTF_OpenFont((char*)"BoobToob.ttf", 20);
+	if (font == NULL) {
+		cout << "Font loading error" << endl;
+		return;
+	}
+
+	SDL_Surface* gameover = TTF_RenderText_Solid(font, "Game Over", Red);
+	SDL_Surface* retry = TTF_RenderText_Solid(font, "Press Enter to retry", White);
+	SDL_Surface* score = TTF_RenderText_Solid(font, (string("Your Score: ") + to_string(tailLength * 10)).c_str(), Black);
+	SDL_Texture* gameoverMessage = SDL_CreateTextureFromSurface(renderer, gameover);
+	SDL_Texture* retryMessage = SDL_CreateTextureFromSurface(renderer, retry);
+	SDL_Texture* scoreMessage = SDL_CreateTextureFromSurface(renderer, score);
+	SDL_Rect gameoverRect;
+	SDL_Rect retryRect;
+	SDL_Rect scoreRect;
+	gameoverRect.w = 300;
+	gameoverRect.h = 100;
+	gameoverRect.x = ((scale*wScale) / 2)-(gameoverRect.w/2);
+	gameoverRect.y = ((scale*wScale) / 2)-(gameoverRect.h/2)-70;
+	retryRect.w = 300;
+	retryRect.h = 50;
+	retryRect.x = ((scale*wScale) / 2) - ((retryRect.w / 2));
+	retryRect.y = (((scale*wScale) / 2) - ((retryRect.h / 2))+150);
+	scoreRect.w = 200;
+	scoreRect.h = 48;
+	//scoreRect.x = ((scale*wScale) / 2) - (scoreRect.w / 2);
+	//scoreRect.y = 0;
+	scoreRect.x = 190;
+	scoreRect.y = 190*2-100;
+
+	SDL_RenderCopy(renderer, gameoverMessage, NULL, &gameoverRect);
+	SDL_RenderCopy(renderer, retryMessage, NULL, &retryRect);
+	SDL_RenderCopy(renderer, scoreMessage, NULL, &scoreRect);
+
+	TTF_CloseFont(font);
+	// Show game over screen while space has not been pressed
+	while (true) {
+		SDL_RenderPresent(renderer);
+		if (SDL_PollEvent(&event)) {
+			if (event.type == SDL_QUIT) {
+				exit(0);
+			}
+			if (event.key.keysym.scancode == SDL_SCANCODE_RETURN) {
+				return;
+			}
+		}
+	}
+}
+
+void youWin(SDL_Renderer* renderer, SDL_Event event, int scale, int wScale, int tailLength) {
+	SDL_Color Red = { 255, 0, 0 };
+	SDL_Color White = { 255, 255, 255 };
+	SDL_Color Black = { 0, 0, 0 };
+	SDL_Color Yellow = { 255, 255, 0 };
+
+	// Get the font used for displaying text
+	TTF_Font* font = TTF_OpenFont((char*)"arial.ttf", 10);
+	if (font == NULL) {
+		cout << "Font loading error" << endl;
+		return;
+	}
+
+	SDL_Surface* gameover = TTF_RenderText_Solid(font, "You won!", Yellow);
+	SDL_Surface* retry = TTF_RenderText_Solid(font, "Press Enter to play again", White);
+	SDL_Surface* score = TTF_RenderText_Solid(font, (string("Score: ") + to_string(tailLength * 10)).c_str(), Black);
+	SDL_Texture* gameoverMessage = SDL_CreateTextureFromSurface(renderer, gameover);
+	SDL_Texture* retryMessage = SDL_CreateTextureFromSurface(renderer, retry);
+	SDL_Texture* scoreMessage = SDL_CreateTextureFromSurface(renderer, score);
+	SDL_Rect gameoverRect;
+	SDL_Rect retryRect;
+	SDL_Rect scoreRect;
+	gameoverRect.w = 200;
+	gameoverRect.h = 100;
+	gameoverRect.x = ((scale*wScale) / 2) - (gameoverRect.w / 2);
+	gameoverRect.y = ((scale*wScale) / 2) - (gameoverRect.h / 2) - 50;
+	retryRect.w = 300;
+	retryRect.h = 50;
+	retryRect.x = ((scale*wScale) / 2) - ((retryRect.w / 2));
+	retryRect.y = (((scale*wScale) / 2) - ((retryRect.h / 2)) + 150);
+	scoreRect.w = 100;
+	scoreRect.h = 30;
+	scoreRect.x = ((scale*wScale) / 2) - (scoreRect.w / 2);
+	scoreRect.y = 0;
+	SDL_RenderCopy(renderer, gameoverMessage, NULL, &gameoverRect);
+	SDL_RenderCopy(renderer, retryMessage, NULL, &retryRect);
+	SDL_RenderCopy(renderer, scoreMessage, NULL, &scoreRect);
+
+	TTF_CloseFont(font);
+
+	// Show victory screen while space has not been pressed
+	while (true) {
+		SDL_RenderPresent(renderer);
+
+		if (SDL_PollEvent(&event)) {
+
+			if (event.type == SDL_QUIT) {
+				exit(0);
+			}
+
+			if (event.key.keysym.scancode == SDL_SCANCODE_RETURN) {
+				return;
+			}
+
+		}
+
+	}
+
+}
+
+
+int main(int argc, char* argv[]) {
+
+	SDL_Init(SDL_INIT_EVERYTHING);// Init everything so we have everything
+	// Init TTF and check for any errors
+	if (TTF_Init() < 0) {
+		cout << "Error: " << TTF_GetError() << endl;
+	}
+	SDL_Window* window;
+	SDL_Renderer* renderer;
+	SDL_Event event;
+	// This is the player rectangle, set all values to 0
+	SDL_Rect player;
+	player.x = 24;
+	player.y = 48;
+	player.h = 0;
+	player.w = 0;
+	// tailLength is incremented every time the snake eats food
+	int tailLength = 0;
+	// Vectors for storage of tail block positions
+	vector<int> tailX;
+	vector<int> tailY;
+	// Size of tiles
+	int scale = 24;
+	int wScale = 24;
+	// Player position variables
+	int x = 24;
+	int y = 48;
+	int prevX = 24;
+	int prevY = 48;
+	// Movement controls
+	bool up = false;
+	bool down = false;
+	bool right = false;
+	bool left = false;
+
+	bool inputThisFrame = false;
+	bool redo = false;
+
+	// Food rectangle
+	SDL_Rect food;
+	food.w = scale;
+	food.h = scale;
+	food.x = 0;
+	food.y = 0;
+
+	pair<int, int> foodLoc = getFoodSpawn(tailX, tailY, x, y, scale, wScale, tailLength);
+	food.x = foodLoc.first;
+	food.y = foodLoc.second;
+
+	// Show the window with these settings and apply a renderer to it
+	//window = SDL_CreateWindow("Snake", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, scale*wScale+1, scale*wScale+1, SDL_WINDOW_RESIZABLE);
+	//renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+
+	initSDL(window, renderer, scale*wScale+1, scale*wScale+1 , WINDOW_TITLE);
+
+	float time = SDL_GetTicks() / 100;
+
+	// Main game loop, this constantly runs and keeps everything updated
+
+	while (true) {
+		float newTime = SDL_GetTicks() / 100; //This value (75) is the speed at which the blocks are updated
+		float delta = newTime - time;
+		time = newTime;
+		inputThisFrame = false;
+
+		// Check win condition, tail needs to fill all tiles
+		if (tailLength >= 575) {
+			youWin(renderer, event, scale, wScale, tailLength);
+			x = 0;
+			y = 0;
+			up = false;
+			left = false;
+			right = false;
+			down = false;
+			tailX.clear();
+			tailY.clear();
+			tailLength = 0;
+			redo = false;
+			foodLoc = getFoodSpawn(tailX, tailY, x, y, scale, wScale, tailLength);
+
+			if (food.x == -100 && food.y == -100) {
+				redo = true;
+			}
+
+			food.x = foodLoc.first;
+			food.y = foodLoc.second;
+		}
+
+		// Controls
+		if (SDL_PollEvent(&event)) {
+			// Simply exit the program when told to
+			if (event.type == SDL_QUIT) {
+				exit(0);
+			}
+			// If a key is pressed
+			if (event.type == SDL_KEYDOWN && inputThisFrame == false) {
+				// Then check for the key being pressed and change direction accordingly
+				if (down == false && event.key.keysym.scancode == SDL_SCANCODE_UP) {
+					up = true;
+					left = false;
+					right = false;
+					down = false;
+					inputThisFrame = true;
+				}
+				else if (right == false && event.key.keysym.scancode == SDL_SCANCODE_LEFT) {
+					up = false;
+					left = true;
+					right = false;
+					down = false;
+					inputThisFrame = true;
+				}
+				else if (up == false && event.key.keysym.scancode == SDL_SCANCODE_DOWN) {
+					up = false;
+					left = false;
+					right = false;
+					down = true;
+					inputThisFrame = true;
+				}
+				else if (left == false && event.key.keysym.scancode == SDL_SCANCODE_RIGHT) {
+					up = false;
+					left = false;
+					right = true;
+					down = false;
+					inputThisFrame = true;
+				}
+			}
+		}
+
+		// The previous position of the player block
+		prevX = x;
+		prevY = y;
+
+		if (up) {
+			y -= delta * scale;
+		}
+		else if (left) {
+			x -= delta * scale;
+		}
+		else if (right) {
+			x += delta * scale;
+		}
+		else if (down) {
+			y += delta * scale;
+		}
+
+		if (redo == true) {
+			redo = false;
+			foodLoc = getFoodSpawn(tailX, tailY, x, y, scale, wScale, tailLength);
+			food.x = foodLoc.first;
+			food.y = foodLoc.second;
+			if (food.x == -100 && food.y == -100) {
+				redo = true;
+			}
+		}
+
+		// Collision detection, has played collided with food?
+		if (checkCollision(food.x, food.y, x, y)) {
+
+			// Spawn new food after it has been eaten
+			foodLoc = getFoodSpawn(tailX, tailY, x, y, scale, wScale, tailLength);
+			food.x = foodLoc.first;
+			food.y = foodLoc.second;
+
+			if (food.x == -100 && food.y == -100) {
+				redo = true;
+			}
+			//renderFood(renderer, food);
+			tailLength++;
+		}
+		// Only runs in the frames where the player block has moved
+		if (delta * scale == 24) {
+			// Update tail size and position
+			if (tailX.size() != tailLength) {
+				tailX.push_back(prevX);
+				tailY.push_back(prevY);
+			}
+			//Loop through every tail block, move all blocks to the nearest block in front
+			//This updates the blocks from end (farthest from player block) to the start (nearest to player block)
+			for (int i = 0; i < tailLength; i++) {
+				if (i > 0) {
+					tailX[i - 1] = tailX[i];
+					tailY[i - 1] = tailY[i];
+				}
+			}
+			if (tailLength > 0) {
+				tailX[tailLength - 1] = prevX;
+				tailY[tailLength - 1] = prevY;
+			}
+		}
+
+		// Game over if player has collided with a tail block, also reset everything
+		// Game over if player out of bounds, also resets the game state
+		if (gameOver(x,y,scale, wScale, tailLength, tailX, tailY)) {
+			renderGameOver(renderer, event, scale, wScale, tailLength);
+			x = 24;
+			y = 48;
+			up = false;
+			left = false;
+			right = false;
+			down = false;
+			tailX.clear();
+			tailY.clear();
+			tailLength = 0;
+			redo = false;
+			foodLoc = getFoodSpawn(tailX, tailY, x, y, scale, wScale, tailLength);
+			food.x = foodLoc.first;
+			food.y = foodLoc.second;
+			if (food.x == -100 && food.y == -100) {
+				redo = true;
+			}
+		}
+		// Render everything
+
+		renderFood(renderer, food);
+		//if (i == 0) renderFood_1(renderer, food);
+		//else if(i == 2) renderFood_2(renderer, food);
+        //else if(i == 3) renderFood_3(renderer, food);
+		//else if(i == 4) renderFood_4(renderer, food);
+
+		renderPlayer(renderer, player, x, y, scale, tailX, tailY, tailLength);
+		renderScore(renderer, tailLength, scale, wScale);
+
+		SDL_RenderDrawLine(renderer, 24, 48, 24 * 23, 48);
+		SDL_RenderDrawLine(renderer, 24, 48, 24, 24 * 23);
+		SDL_RenderDrawLine(renderer, 24 * 23, 48, 24*23, 24 * 23);
+		SDL_RenderDrawLine(renderer, 24, 24 * 23, 24*23, 24 * 23);
+
+		// Put everything on screen
+		// Nothing is actually put on screen until this is called
+
+		SDL_RenderPresent(renderer);
+
+		// Choose a color and fill the entire window with it, this resets everything before the next frame
+		// This also give us the background color
+
+		SDL_SetRenderDrawColor(renderer, 204, 200, 220, 255);
+
+		//SDL_Texture* background = loadTexture("bgr.jpg", renderer);
         //SDL_RenderCopy(renderer, background, NULL, NULL);
         //SDL_RenderPresent(renderer);
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) run = false;
-            else if (e.type == SDL_KEYDOWN) {
-                switch (e.key.keysym.sym) {
-                case SDLK_ESCAPE:
-                    run = false;
-                    break;
-                case SDLK_w: case SDLK_UP:
-                    snake.setDirection(0,-1);
-                    Background(renderer);
-                    SDL_Delay(STEP_DELAY);
-                    snake.Move();
-                    snake.ShowSnake(renderer);
-                    if (snake.isEat(food)) {
-                        snake.GrowUp();
-                        food.x = rand() % (SCREEN_WIDTH / 20) * 20;
-                        food.y = rand() % (SCREEN_HEIGHT / 20) * 20;
-                        presentFood(renderer, food);
-                        score++;
-                    }
-                    presentFood(renderer, food);
-                    break;
-                case SDLK_s: case SDLK_DOWN:
-                    snake.setDirection(0,1);
-                    Background(renderer);
-                    SDL_Delay(STEP_DELAY);
-                    snake.Move();
-                    snake.ShowSnake(renderer);
-                    if (snake.isEat(food)) {
-                        snake.GrowUp();
-                        food.x = rand() % (SCREEN_WIDTH / 20) * 20;
-                        food.y = rand() % (SCREEN_HEIGHT / 20) * 20;
-                        presentFood(renderer, food);
-                        score++;
-                    }
-                    presentFood(renderer, food);
-                    break;
-                case SDLK_a: case SDLK_LEFT:
-                    snake.setDirection(-1,0);
-                    Background(renderer);
-                    SDL_Delay(STEP_DELAY);
-                    snake.Move();
-                    snake.ShowSnake(renderer);
-                    if (snake.isEat(food)) {
-                        snake.GrowUp();
-                        food.x = rand() % (SCREEN_WIDTH / 20) * 20;
-                        food.y = rand() % (SCREEN_HEIGHT / 20) * 20;
-                        presentFood(renderer, food);
-                        score++;
-                    }
-                    presentFood(renderer, food);
-                    break;
-                case SDLK_d: case SDLK_RIGHT:
-                    snake.setDirection(1,0);
-                    Background(renderer);
-                    SDL_Delay(STEP_DELAY);
-                    snake.Move();
-                    snake.ShowSnake(renderer);
-                    if (snake.isEat(food)) {
-                        snake.GrowUp();
-                        food.x = rand() % (SCREEN_WIDTH / 20) * 20;
-                        food.y = rand() % (SCREEN_HEIGHT / 20) * 20;
-                        presentFood(renderer, food);
-                        score++;
-                    }
-                    presentFood(renderer, food);
-                    break;
-                }
-            }
-        }
-        Background(renderer);
-        SDL_Delay(STEP_DELAY);
-        snake.Move();
-        snake.ShowSnake(renderer);
-        if (snake.isEat(food)) {
-            snake.GrowUp();
-            food.x = rand() % (SCREEN_WIDTH / 20) * 20;
-            food.y = rand() % (SCREEN_HEIGHT / 20) * 20;
-            presentFood(renderer, food);
-            score++;
-        }
-        presentFood(renderer, food);
-    }
-    quitSDL(window, renderer);
+
+		SDL_RenderClear(renderer);
+	}
+	quitSDL(window, renderer);
+
+	return 0;
+
 }
-int main (int argc, char* argv[]) {
-    int score = 1;
-    //setLevel();
-    Play(score);
-    cout << "GAME OVER!" << endl;
-    cout << "Your score: " << score << endl;
-    return 0;
-}
-
-
-
-
-
-
-
-
-
-
 
 
 
