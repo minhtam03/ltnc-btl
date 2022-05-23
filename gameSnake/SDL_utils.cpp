@@ -59,3 +59,66 @@ SDL_Texture* loadTexture (string path, SDL_Renderer* renderer) {
     }
     return newTexture;
 }
+
+void renderImage(string path, SDL_Renderer* renderer, int dx, int dy, double direction) {
+    SDL_Texture* newTexture = nullptr;
+    SDL_Surface* loadedSurface = IMG_Load (path.c_str());
+    if (loadedSurface == nullptr) {
+        cout << "Unable to load image " << path << "SDL_image Error: " << IMG_GetError() << endl;
+    } else {
+        newTexture = SDL_CreateTextureFromSurface(renderer, loadedSurface);
+        if (newTexture == nullptr)
+            cout << "Unable to create texture from " << path << " SDL Error: " << SDL_GetError() << endl;
+        SDL_FreeSurface(loadedSurface);
+    }
+    SDL_Rect dest;
+    dest.w = 24;
+    dest.h = 24;
+    dest.x = dx;
+    dest.y = dy;
+    SDL_RenderCopyEx(renderer, newTexture, NULL, &dest, direction, nullptr, SDL_FLIP_NONE);
+    SDL_DestroyTexture(newTexture);
+}
+
+void renderVectorImage(string path, SDL_Renderer* renderer, int dx, int dy, bool up, bool down, bool right, bool left) {
+    SDL_Texture* newTexture = nullptr;
+    SDL_Surface* loadedSurface = IMG_Load (path.c_str());
+    if (loadedSurface == nullptr) {
+        cout << "Unable to load image " << path << "SDL_image Error: " << IMG_GetError() << endl;
+    } else {
+        newTexture = SDL_CreateTextureFromSurface(renderer, loadedSurface);
+        if (newTexture == nullptr)
+            cout << "Unable to create texture from " << path << " SDL Error: " << SDL_GetError() << endl;
+        SDL_FreeSurface(loadedSurface);
+    }
+    SDL_Rect dest;
+    dest.w = 24;
+    dest.h = 24;
+    dest.x = dx;
+    dest.y = dy;
+    double direction = 0;
+    if (up) direction = 270;
+    else if (down) direction = 90;
+    else if (right) direction = 0;
+    else if (left) direction = 180;
+    SDL_RenderCopyEx(renderer, newTexture, NULL, &dest, direction, nullptr, SDL_FLIP_NONE);
+    SDL_DestroyTexture(newTexture);
+}
+
+void renderFont(SDL_Renderer* renderer, SDL_Color color, string path_font, int ptsize, string dest, int dw, int dh, int dx, int dy) {
+    TTF_Font* font = TTF_OpenFont(path_font.c_str(), ptsize);
+    if (font == NULL) {
+        cout << "Font loading error" << endl;
+        return;
+    }
+    SDL_Surface* score = TTF_RenderText_Solid(font, dest.c_str(), color);
+    SDL_Texture* destTexture = SDL_CreateTextureFromSurface(renderer, score);
+    SDL_FreeSurface(score);
+    SDL_Rect destRect;
+    destRect.w = dw;
+    destRect.h = dh;
+    destRect.x = dx;
+    destRect.y = dy;
+    SDL_RenderCopy(renderer, destTexture, NULL, &destRect);
+    TTF_CloseFont(font);
+}

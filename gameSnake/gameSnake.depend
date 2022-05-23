@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1653272259 source:d:\code_git\ltnc-btl\gamesnake\main.cpp
+1653297004 source:d:\code_git\ltnc-btl\gamesnake\main.cpp
 	<iostream>
 	<vector>
 	<string>
@@ -8,13 +8,28 @@
 	<SDL_ttf.h>
 	<SDL_image.h>
 	"SDL_utils.h"
+	"snake.h"
 
-1647245563 source:d:\code_git\ltnc-btl\gamesnake\sdl_utils.cpp
+1653288765 source:d:\code_git\ltnc-btl\gamesnake\sdl_utils.cpp
 	<iostream>
 	"SDL_utils.h"
 
-1647245563 d:\code_git\ltnc-btl\gamesnake\sdl_utils.h
+1653286761 d:\code_git\ltnc-btl\gamesnake\sdl_utils.h
 	<iostream>
 	<SDL.h>
 	<SDL_image.h>
+	<SDL_ttf.h>
+
+1653296880 d:\code_git\ltnc-btl\gamesnake\snake.h
+	<iostream>
+	<vector>
+	<string>
+	<SDL.h>
+	<SDL_image.h>
+	<SDL_ttf.h>
+	"SDL_utils.h"
+
+1653297084 source:d:\code_git\ltnc-btl\gamesnake\snake.cpp
+	<iostream>
+	"snake.h"
 
